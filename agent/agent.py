@@ -2,7 +2,7 @@ import socket
 import json
 import uuid
 import threading
-from discovery import discovery
+from discovery import discovery_listener
 from control import handle_command
 
 TCP_PORT = 5000
@@ -78,7 +78,7 @@ def load_config():
         return json.load(f)
 
 if __name__ == "__main__":
-    threading.Thread(target=discovery, daemon=True).start()
+    threading.Thread(target=discovery_listener, daemon=True).start()
     threading.Thread(target=tcp_server, daemon=True).start()
 
     print("Agent actif en arrière-plan")
