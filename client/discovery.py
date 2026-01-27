@@ -9,7 +9,8 @@ def discover(timeout=3):
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
     sock.settimeout(timeout)
 
-    sock.sendto(MESSAGE.encode(), ("<broadcast>", DISCOVERY_PORT))
+    # Utiliser 255.255.255.255 au lieu de "<broadcast>" pour Windows
+    sock.sendto(MESSAGE.encode(), ("255.255.255.255", DISCOVERY_PORT))
 
     devices = []
 
@@ -21,5 +22,7 @@ def discover(timeout=3):
             devices.append(info)
     except socket.timeout:
         pass
+    finally:
+        sock.close()
 
     return devices
