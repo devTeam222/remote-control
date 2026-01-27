@@ -13,6 +13,7 @@ def discovery_listener():
 
     while True:
         data, addr = sock.recvfrom(1024)
+        print(f"📥 Message reçu de {addr}: {data.decode()}")
         if data.decode() == "DISCOVER_REMOTE_AGENT":
             config = load_config()
             response = {
@@ -21,3 +22,4 @@ def discovery_listener():
                 "port": 5000
             }
             sock.sendto(json.dumps(response).encode(), addr)
+            print(f"📤 Réponse envoyée à {addr}")

@@ -11,16 +11,19 @@ def discover(timeout=3):
 
     # Utiliser 255.255.255.255 au lieu de "<broadcast>" pour Windows
     sock.sendto(MESSAGE.encode(), ("255.255.255.255", DISCOVERY_PORT))
+    print(f"📡 Broadcast envoyé sur port {DISCOVERY_PORT}")
 
     devices = []
 
     try:
         while True:
             data, addr = sock.recvfrom(1024)
+            print(f"📨 Réponse reçue de {addr}")
             info = json.loads(data.decode())
             info["ip"] = addr[0]
             devices.append(info)
     except socket.timeout:
+        print("⏰ Timeout, aucune réponse")
         pass
     finally:
         sock.close()
