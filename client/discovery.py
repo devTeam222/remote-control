@@ -1,35 +1,42 @@
 import socket
 import json
+import threading
 
 DISCOVERY_PORT = 37020
 MESSAGE = "DISCOVER_REMOTE_AGENT"
-CLIENT_MESSAGE = "DISCOVER_CLIENT"  # Nouveau message pour identifier le client
 
-def discover(timeout=3, is_agent=False):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-    sock.settimeout(timeout)
-
-    # Choisir le message selon le type (agent ou client)
-    message = MESSAGE if is_agent else CLIENT_MESSAGE
-    
-    # Utiliser 255.255.255.255 au lieu de "<broadcast>" pour Windows
-    sock.sendto(message.encode(), ("255.255.255.255", DISCOVERY_PORT))
-    print(f"📡 Broadcast envoyé sur port {DISCOVERY_PORT} - Type: {'Agent' if is_agent else 'Client'}")
-
+def discover(timeout=8):
     devices = []
-
+    
+    # Socket pour ÉCOUTER les réponses broadcast
+    listen_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    listen_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    listen_sock.bind(("", DISCOVERY_PORT))  # Écouter sur le port
+    listen_sock.settimeout(timeout)
+    
+    # Socket pour ENVOYER le broadcast
+    send_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    send_sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    
     try:
+        # Envoyer le broadcast
+        send_sock.sendto(MESSAGE.encode(), ("255.255.255.255", DISCOVERY_PORT))
+        print(f"📡 Broadcast envoyé: {MESSAGE}")
+        
+        # Écouter les réponses
         while True:
-            data, addr = sock.recvfrom(1024)
-            print(f"📨 Réponse reçue de {addr}")
-            info = json.loads(data.decode())
-            info["ip"] = addr[0]
-            devices.append(info)
+            data, addr = listen_sock.recvfrom(1024)
+            print(f"✅ Réponse de {addr[0]}: {data.decode()}")
+            try:
+                info = json.loads(data.decode())
+                info["ip"] = addr[0]
+                devices.append(info)
+            except:
+                pass
     except socket.timeout:
-        print("⏰ Timeout, aucune réponse")
-        pass
+        print(f"⏰ Timeout après {timeout}s")
     finally:
-        sock.close()
+        listen_sock.close()
+        send_sock.close()
 
     return devices
