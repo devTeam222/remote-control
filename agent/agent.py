@@ -1,5 +1,6 @@
 import socket
 import json
+import uuid
 import threading
 from discovery import discovery_listener
 from control import handle_command
@@ -27,13 +28,6 @@ def tcp_server():
 
         conn.close()
 
-if __name__ == "__main__":
-    threading.Thread(target=discovery_listener, daemon=True).start()
-    threading.Thread(target=tcp_server, daemon=True).start()
-
-    print("Agent actif en arrière-plan")
-    while True:
-        pass
     
 from security import load_or_create_key, decrypt, encrypt, is_trusted, trust_device
 
@@ -75,4 +69,18 @@ def tcp_server():
             print("❌ Connexion refusée :", e)
 
         conn.close()
+def get_mac():
+    mac = uuid.getnode()
+    return ':'.join(f'{(mac >> ele) & 0xff:02x}' for ele in range(40, -1, -8))
 
+def load_config():
+    with open("config.json", "r") as f:
+        return json.load(f)
+
+if __name__ == "__main__":
+    threading.Thread(target=discovery_listener, daemon=True).start()
+    threading.Thread(target=tcp_server, daemon=True).start()
+
+    print("Agent actif en arrière-plan")
+    while True:
+        pass
