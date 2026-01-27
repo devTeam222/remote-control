@@ -6,13 +6,27 @@ import time
 DISCOVERY_PORT = 37020
 MESSAGE = "DISCOVER_REMOTE_AGENT"
 
+def get_local_ip():
+    """Obtient l'IP locale réelle (pas 169.254.x.x)"""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except:
+        return "0.0.0.0"
+
 def discover(timeout=8):
     devices = []
+    
+    local_ip = get_local_ip()
+    print(f"🌐 IP locale détectée: {local_ip}")
     
     # Socket pour ÉCOUTER les réponses broadcast
     listen_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     listen_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    listen_sock.bind(("0.0.0.0", DISCOVERY_PORT))  # Écouter sur le port
+    listen_sock.bind(("", DISCOVERY_PORT))  # Écouter sur le port
     listen_sock.settimeout(timeout)
     
     # Socket pour ENVOYER le broadcast

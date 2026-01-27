@@ -9,7 +9,7 @@ def discovery_listener():
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(("0.0.0.0", DISCOVERY_PORT))
 
-    print("Écoute discovery UDP...")
+    print("Écoute discovery UDP sur 0.0.0.0:37020...")
 
     while True:
         data, addr = sock.recvfrom(1024)
@@ -21,5 +21,6 @@ def discovery_listener():
                 "mac": get_mac(),
                 "port": 5000
             }
-            sock.sendto(json.dumps(response).encode(), addr)
-            print(f"📤 Réponse envoyée à {addr}")
+            response_json = json.dumps(response).encode()
+            sock.sendto(response_json, addr)
+            print(f"📤 Réponse envoyée à {addr}: {response_json.decode()}")
