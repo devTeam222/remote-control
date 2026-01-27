@@ -6,8 +6,8 @@ DISCOVERY_PORT = 37020
 
 def discovery_listener():
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-    sock.bind(("", DISCOVERY_PORT))
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sock.bind(("0.0.0.0", DISCOVERY_PORT))
 
     print("Écoute discovery UDP...")
 
