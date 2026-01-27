@@ -17,16 +17,24 @@ def get_local_ip():
     except:
         return "0.0.0.0"
 
+def get_broadcast_ip(local_ip):
+    """Calcule l'adresse broadcast à partir de l'IP locale"""
+    parts = local_ip.split(".")
+    parts[3] = "255"
+    return ".".join(parts)
+
 def discover(timeout=8):
     devices = []
     
     local_ip = get_local_ip()
+    broadcast_ip = get_broadcast_ip(local_ip)
     print(f"🌐 IP locale détectée: {local_ip}")
+    print(f"📍 Broadcast cible: {broadcast_ip}")
     
-    # Socket pour ÉCOUTER les réponses broadcast
+    # Socket pour ÉCOUTER les réponses
     listen_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     listen_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    listen_sock.bind(("", DISCOVERY_PORT))  # Écouter sur le port
+    listen_sock.bind((local_ip, DISCOVERY_PORT))  # Écouter sur le port
     listen_sock.settimeout(timeout)
     
     # Socket pour ENVOYER le broadcast
@@ -36,8 +44,8 @@ def discover(timeout=8):
     try:
         time.sleep(0.1)  # Petit délai pour s'assurer que le socket écoute
         # Envoyer le broadcast
-        send_sock.sendto(MESSAGE.encode(), ("255.255.255.255", DISCOVERY_PORT))
-        print(f"📡 Broadcast envoyé: {MESSAGE}")
+        send_sock.sendto(MESSAGE.encode(), (broadcast_ip, DISCOVERY_PORT))
+        print(f"📡 Broadcast envoyé à {broadcast_ip}")
         
         # Écouter les réponses
         while True:
