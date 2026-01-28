@@ -4,6 +4,7 @@ import threading
 import pynput
 from pynput.keyboard import Controller as KeyboardController, Key
 from pynput.mouse import Controller as MouseController
+import time
 
 keyboard = KeyboardController()
 mouse = MouseController()
@@ -45,19 +46,17 @@ def process_command(cmd, addr):
     if cmd_type == "keyboard":
         action = data.get("action")
         key = data.get("key", "")
-        modifiers = data.get("modifiers", [])
         
         try:
+            key_obj = parse_key(key)
             if action == "press":
-                key_obj = parse_key(key)
                 keyboard.press(key_obj)
-                print(f"⌨️ Press: {'+'.join(modifiers + [key]) if modifiers else key}")
+                print(f"⌨️ Press: {key}")
             elif action == "release":
-                key_obj = parse_key(key)
                 keyboard.release(key_obj)
                 print(f"⌨️ Release: {key}")
         except Exception as e:
-            print(f"❌ Erreur clavier: {e}")
+            print(f"❌ Erreur clavier ({key}): {e}")
     
     elif cmd_type == "mouse":
         action = data.get("action")
@@ -70,7 +69,12 @@ def process_command(cmd, addr):
             
             elif action == "click":
                 button = data.get("button", "left")
-                mouse.click(pynput.mouse.Button[button.upper()])
+                btn = pynput.mouse.Button.left
+                if button.lower() == "right":
+                    btn = pynput.mouse.Button.right
+                elif button.lower() == "middle":
+                    btn = pynput.mouse.Button.middle
+                mouse.click(btn)
                 print(f"🖱️ Click: {button}")
             
             elif action == "scroll":
@@ -81,7 +85,7 @@ def process_command(cmd, addr):
             print(f"❌ Erreur souris: {e}")
 
 def parse_key(key_str):
-    """Convertit les noms de touches en objets Key"""
+    """Convertit les noms de touches en objets Key - envoie tout ce qui ne correspond pas"""
     key_str_lower = key_str.lower()
     
     key_map = {
@@ -140,11 +144,7 @@ def parse_key(key_str):
     elif len(key_str) == 1:
         return key_str
     else:
-        # Essayer sans underscores et avec underscores remplacés
-        normalized = key_str_lower.replace("_", "")
-        if normalized in key_map:
-            return key_map[normalized]
-        print(f"⚠️ Touche inconnue: {key_str}")
+        # Pour les touches inconnues, on les envoie telles quelles
         return key_str
 
 def start_server(host="0.0.0.0", port=5000):

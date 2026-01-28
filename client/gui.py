@@ -159,13 +159,16 @@ class RemoteControlGUI:
         return "break"
         
     def on_mouse_move(self, event):
-        x = event.x
-        y = event.y
+        # Obtenir les coordonnées absolues de l'écran (pas du canvas)
+        x = self.root.winfo_pointerx()
+        y = self.root.winfo_pointery()
         self.send_command("mouse", {"action": "move", "x": x, "y": y})
         
     def on_mouse_click(self, event, button):
-        self.send_command("mouse", {"action": "click", "button": button, "x": event.x, "y": event.y})
-        self.log(f"🖱️ Clic {button} à ({event.x}, {event.y})")
+        x = self.root.winfo_pointerx()
+        y = self.root.winfo_pointery()
+        self.send_command("mouse", {"action": "click", "button": button, "x": x, "y": y})
+        self.log(f"🖱️ Clic {button} à ({x}, {y})")
         
     def on_mouse_wheel(self, event):
         delta = 1 if event.num == 4 or event.delta > 0 else -1
