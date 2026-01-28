@@ -31,23 +31,22 @@ def discover(timeout=8):
     print(f"🌐 IP locale détectée: {local_ip}")
     print(f"📍 Broadcast cible: {broadcast_ip}")
     
-    # Socket pour ÉCOUTER les réponses
+    # Socket pour ÉCOUTER les réponses (sur TOUTES les interfaces)
     listen_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     listen_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    listen_sock.bind((local_ip, DISCOVERY_PORT))  # Écouter sur le port
+    listen_sock.bind(("0.0.0.0", DISCOVERY_PORT))
     listen_sock.settimeout(timeout)
     
     # Socket pour ENVOYER le broadcast
     send_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     send_sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    send_sock.bind((local_ip, 0))
     
     try:
-        time.sleep(0.1)  # Petit délai pour s'assurer que le socket écoute
-        # Envoyer le broadcast
+        time.sleep(0.1)
         send_sock.sendto(MESSAGE.encode(), (broadcast_ip, DISCOVERY_PORT))
         print(f"📡 Broadcast envoyé à {broadcast_ip}")
         
-        # Écouter les réponses
         while True:
             data, addr = listen_sock.recvfrom(1024)
             print(f"✅ Réponse de {addr[0]}: {data.decode()}")

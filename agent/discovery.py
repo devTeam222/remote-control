@@ -4,12 +4,26 @@ from utils import get_mac, load_config
 
 DISCOVERY_PORT = 37020
 
+def get_local_ip():
+    """Obtient l'IP locale réelle"""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except:
+        return "0.0.0.0"
+
 def discovery_listener():
+    local_ip = get_local_ip()
+    print(f"🌐 Agent écoute sur: {local_ip}:{DISCOVERY_PORT}")
+    
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.bind(("0.0.0.0", DISCOVERY_PORT))
+    sock.bind((local_ip, DISCOVERY_PORT))
 
-    print("Écoute discovery UDP sur 0.0.0.0:37020...")
+    print("Écoute discovery UDP...")
 
     while True:
         data, addr = sock.recvfrom(1024)
