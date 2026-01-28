@@ -13,6 +13,7 @@ class RemoteControlGUI:
         self.server_socket = None
         self.server_ip = None
         self.server_port = None
+        self.keyboard_input = None
         
         self.setup_ui()
         
@@ -35,12 +36,12 @@ class RemoteControlGUI:
         keyboard_frame = ttk.LabelFrame(self.root, text="Contrôle Clavier", padding=10)
         keyboard_frame.pack(fill=tk.X, padx=10, pady=5)
         
-        self.keyboard_input = tk.Entry(keyboard_frame, font=("Arial", 14))
-        self.keyboard_input.pack(fill=tk.X, pady=5)
-        self.keyboard_input.bind("<KeyPress>", self.on_key_press)
-        self.keyboard_input.bind("<KeyRelease>", self.on_key_release)
+        self.keyboard_label = ttk.Label(keyboard_frame, text="🎯 Prêt à capturer (cliquez ici pour activer)", 
+                                        background="lightgray", padding=10, relief=tk.SUNKEN)
+        self.keyboard_label.pack(fill=tk.X, pady=5)
+        self.keyboard_label.bind("<Button-1>", self.activate_keyboard_capture)
         
-        ttk.Label(keyboard_frame, text="Cliquez et tapez vos commandes (Shift, Ctrl, Alt, etc.)").pack(anchor=tk.W)
+        ttk.Label(keyboard_frame, text="Cliquez sur la zone grise pour capturer clavier/souris (Échap pour arrêter)").pack(anchor=tk.W)
         
         # Frame contrôle souris
         mouse_frame = ttk.LabelFrame(self.root, text="Contrôle Souris", padding=10)
@@ -106,13 +107,33 @@ class RemoteControlGUI:
             self.log(f"❌ Erreur connexion: {e}")
             self.status_label.config(text="❌ Erreur", foreground="red")
             
+    def activate_keyboard_capture(self, event=None):
+        self.keyboard_label.config(text="⏺️ CAPTURE ACTIVE - Appuyez sur Échap pour arrêter", 
+                                   background="lightgreen")
+        self.keyboard_label.focus_set()
+        self.keyboard_label.bind("<KeyPress>", self.on_key_press)
+        self.keyboard_label.bind("<KeyRelease>", self.on_key_release)
+        self.keyboard_label.bind("<Escape>", self.deactivate_keyboard_capture)
+        
+    def deactivate_keyboard_capture(self, event=None):
+        self.keyboard_label.config(text="🎯 Prêt à capturer (cliquez ici pour activer)", 
+                                   background="lightgray")
+        self.keyboard_label.unbind("<KeyPress>")
+        self.keyboard_label.unbind("<KeyRelease>")
+        self.keyboard_label.unbind("<Escape>")
+        
     def send_command(self, command_type, data):
         if not self.server_socket:
+            self.log("❌ Non connecté au serveur")
             return
         
         try:
             msg = json.dumps({"type": command_type, "data": data})
-            self.server_socket.send(msg.encode() + b'\n')
+            self.server_socket.sendall(msg.encode() + b'\n')
+        except ConnectionResetError:
+            self.log("❌ Connexion perdue avec le serveur")
+            self.server_socket = None
+            self.status_label.config(text="❌ Déconnecté", foreground="red")
         except Exception as e:
             self.log(f"❌ Erreur envoi: {e}")
             
@@ -128,10 +149,14 @@ class RemoteControlGUI:
         key = event.keysym
         self.send_command("keyboard", {"action": "press", "key": key, "modifiers": modifiers})
         self.log(f"⌨️ Touche: {'+'.join(modifiers + [key]) if modifiers else key}")
+        return "break"
         
     def on_key_release(self, event):
+        if event.keysym == "Escape":
+            return
         key = event.keysym
         self.send_command("keyboard", {"action": "release", "key": key})
+        return "break"
         
     def on_mouse_move(self, event):
         x = event.x
