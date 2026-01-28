@@ -4,7 +4,6 @@ import threading
 import pynput
 from pynput.keyboard import Controller as KeyboardController, Key
 from pynput.mouse import Controller as MouseController
-import time
 
 keyboard = KeyboardController()
 mouse = MouseController()
@@ -83,19 +82,27 @@ def process_command(cmd, addr):
 
 def parse_key(key_str):
     """Convertit les noms de touches en objets Key"""
+    key_str_lower = key_str.lower()
+    
     key_map = {
         "shift_l": Key.shift,
         "shift_r": Key.shift,
+        "shift": Key.shift,
         "control_l": Key.ctrl,
         "control_r": Key.ctrl,
+        "control": Key.ctrl,
         "alt_l": Key.alt,
         "alt_r": Key.alt,
+        "alt": Key.alt,
         "return": Key.enter,
+        "enter": Key.enter,
         "space": " ",
         "tab": Key.tab,
         "backspace": Key.backspace,
         "delete": Key.delete,
+        "del": Key.delete,
         "escape": Key.esc,
+        "esc": Key.esc,
         "up": Key.up,
         "down": Key.down,
         "left": Key.left,
@@ -103,14 +110,41 @@ def parse_key(key_str):
         "home": Key.home,
         "end": Key.end,
         "page_up": Key.page_up,
+        "pageup": Key.page_up,
         "page_down": Key.page_down,
+        "pagedown": Key.page_down,
+        "insert": Key.insert,
+        "ins": Key.insert,
+        "f1": Key.f1,
+        "f2": Key.f2,
+        "f3": Key.f3,
+        "f4": Key.f4,
+        "f5": Key.f5,
+        "f6": Key.f6,
+        "f7": Key.f7,
+        "f8": Key.f8,
+        "f9": Key.f9,
+        "f10": Key.f10,
+        "f11": Key.f11,
+        "f12": Key.f12,
+        "caps_lock": Key.caps_lock,
+        "num_lock": Key.num_lock,
+        "scroll_lock": Key.scroll_lock,
+        "print": Key.print_screen,
+        "print_screen": Key.print_screen,
+        "pause": Key.pause,
     }
     
-    if key_str in key_map:
-        return key_map[key_str]
+    if key_str_lower in key_map:
+        return key_map[key_str_lower]
     elif len(key_str) == 1:
         return key_str
     else:
+        # Essayer sans underscores et avec underscores remplacés
+        normalized = key_str_lower.replace("_", "")
+        if normalized in key_map:
+            return key_map[normalized]
+        print(f"⚠️ Touche inconnue: {key_str}")
         return key_str
 
 def start_server(host="0.0.0.0", port=5000):
