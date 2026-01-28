@@ -17,13 +17,13 @@ def get_local_ip():
 
 def discovery_listener():
     local_ip = get_local_ip()
-    print(f"🌐 Agent écoute sur: {local_ip}:{DISCOVERY_PORT}")
+    print(f"🌐 Agent IP locale: {local_ip}:{DISCOVERY_PORT}")
     
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.bind((local_ip, DISCOVERY_PORT))
+    sock.bind(("0.0.0.0", DISCOVERY_PORT))
 
-    print("Écoute discovery UDP...")
+    print("Écoute discovery UDP sur toutes les interfaces...")
 
     while True:
         data, addr = sock.recvfrom(1024)
@@ -41,7 +41,8 @@ def discovery_listener():
             response = {
                 "name": config["name"],
                 "mac": get_mac(),
-                "port": 5000
+                "port": 5000,
+                "ip": local_ip
             }
             response_json = json.dumps(response).encode()
             reply_addr = (addr[0], client_port)
