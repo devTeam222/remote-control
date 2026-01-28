@@ -4,7 +4,6 @@ import threading
 import pynput
 from pynput.keyboard import Controller as KeyboardController, Key
 from pynput.mouse import Controller as MouseController
-import time
 
 keyboard = KeyboardController()
 mouse = MouseController()
@@ -47,8 +46,12 @@ def process_command(cmd, addr):
         action = data.get("action")
         key = data.get("key", "")
         
+        if not key:
+            return
+        
         try:
             key_obj = parse_key(key)
+            
             if action == "press":
                 keyboard.press(key_obj)
                 print(f"⌨️ Press: {key}")
@@ -56,7 +59,7 @@ def process_command(cmd, addr):
                 keyboard.release(key_obj)
                 print(f"⌨️ Release: {key}")
         except Exception as e:
-            print(f"❌ Erreur clavier ({key}): {e}")
+            print(f"❌ Erreur clavier ({key}): {type(e).__name__}")
     
     elif cmd_type == "mouse":
         action = data.get("action")
@@ -85,10 +88,11 @@ def process_command(cmd, addr):
             print(f"❌ Erreur souris: {e}")
 
 def parse_key(key_str):
-    """Convertit les noms de touches en objets Key - envoie tout ce qui ne correspond pas"""
+    """Convertit les noms de touches en objets Key - envoie tout en natif"""
     key_str_lower = key_str.lower()
     
-    key_map = {
+    # Mapping des touches spéciales uniquement
+    special_keys = {
         "shift_l": Key.shift,
         "shift_r": Key.shift,
         "shift": Key.shift,
@@ -98,11 +102,16 @@ def parse_key(key_str):
         "alt_l": Key.alt,
         "alt_r": Key.alt,
         "alt": Key.alt,
+        "win_l": Key.cmd,
+        "win_r": Key.cmd,
+        "windows": Key.cmd,
+        "cmd": Key.cmd,
         "return": Key.enter,
         "enter": Key.enter,
         "space": " ",
         "tab": Key.tab,
         "backspace": Key.backspace,
+        "back": Key.backspace,
         "delete": Key.delete,
         "del": Key.delete,
         "escape": Key.esc,
@@ -137,15 +146,16 @@ def parse_key(key_str):
         "print": Key.print_screen,
         "print_screen": Key.print_screen,
         "pause": Key.pause,
+        "menu": Key.alt_gr,
+        "context_menu": Key.alt_gr,
     }
     
-    if key_str_lower in key_map:
-        return key_map[key_str_lower]
-    elif len(key_str) == 1:
-        return key_str
-    else:
-        # Pour les touches inconnues, on les envoie telles quelles
-        return key_str
+    # Si c'est dans le mapping, retourner l'objet Key
+    if key_str_lower in special_keys:
+        return special_keys[key_str_lower]
+    
+    # Sinon, envoyer la touche telle quel (une lettre, un chiffre, un symbole, etc.)
+    return key_str
 
 def start_server(host="0.0.0.0", port=5000):
     """Lance le serveur TCP"""
